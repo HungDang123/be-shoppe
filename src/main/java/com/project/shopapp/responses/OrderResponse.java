@@ -1,6 +1,7 @@
 package com.project.shopapp.responses;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.project.shopapp.models.OrderDetail;
 import com.project.shopapp.models.OrderStatus;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -9,6 +10,7 @@ import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 
 @Getter
 @Setter
@@ -41,4 +43,6 @@ public class OrderResponse extends BaseResponse{
     private LocalDate shoppingDate;
     @JsonProperty("is_active")
     private boolean active;
+    @JsonProperty("order_detail")
+    private List<OrderDetail> orderDetails;
 }

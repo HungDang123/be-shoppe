@@ -2,17 +2,23 @@ server:
   port: 1313
 
 spring:
-    datasource:
-      url: jdbc:postgresql://localhost:5433/shopapp
-      username: postgres
-      password: 123
-      driver-class-name: org.postgresql.Driver
+  datasource:
+    url: jdbc:postgresql://localhost:5433/shopapp
+    username: postgres
+    password: 123
+    driver-class-name: org.postgresql.Driver
 
-    jpa:
-      hibernate:
-        ddl-auto: none
-      show-sql: true
-      database-platform: org.hibernate.dialect.PostgreSQLDialect
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
 api:
   prefix : api/v1
 jwt:

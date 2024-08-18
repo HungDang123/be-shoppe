@@ -9,6 +9,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.util.Date;
+import java.util.List;
 
 @Data//toString
 @Getter
@@ -41,4 +42,6 @@ public class OrderDTO {
     private String paymentMethod;
     @JsonProperty("shopping_date")
     private LocalDate shoppingDate;
+    @JsonProperty("cart_item")
+    private List<CartItemDTO> cartItem;
 }

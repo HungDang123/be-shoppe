@@ -9,6 +9,7 @@ import com.project.shopapp.responses.ProductListResponse;
 import com.project.shopapp.responses.ProductResponse;
 import com.project.shopapp.services.IProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -25,11 +26,14 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("${api.prefix}/products")
@@ -98,6 +102,23 @@ public class ProductController {
             return ResponseEntity.badRequest().body(ex.getMessage());
         }
     }
+    @GetMapping("/images/{imageName}")
+    public ResponseEntity<?> viewImage(@PathVariable("imageName") String imageName){
+        try {
+            Path imagePath = Paths.get("uploads/"+imageName);
+            UrlResource urlResource = new UrlResource(imagePath.toUri());
+            if(urlResource.exists()){
+                return ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_JPEG)
+                        .body(urlResource);
+            }else{
+                return ResponseEntity.notFound().build();
+            }
+        }catch (Exception e){
+                return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     private String storeFile(MultipartFile file) throws IOException {
         String filename = StringUtils.cleanPath(file.getOriginalFilename());
         // Thêm UUID vào trước tên file để đảm bảo tên file là duy nhất
@@ -117,11 +138,13 @@ public class ProductController {
     @GetMapping("")
     public ResponseEntity<ProductListResponse> getProducts(
             @RequestParam("page")     int page,
-            @RequestParam("limit")    int limit
+            @RequestParam("limit")    int limit,
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "0",name ="category_id") Long categoryId
     ) {
         PageRequest request = PageRequest.of(page, limit,
-                Sort.by("createAt").descending());
-        Page<ProductResponse> productPage = productService.getAllProducts(request);
+                Sort.by("id").ascending());
+        Page<ProductResponse> productPage = productService.getAllProducts(keyword,categoryId,request);
         int totalPage = productPage.getTotalPages();
         List<ProductResponse> products = productPage.getContent();
         return ResponseEntity.ok(ProductListResponse
@@ -138,7 +161,19 @@ public class ProductController {
         try {
             Product existingProduct = productService.getProductById(productId);
             return ResponseEntity.ok(ProductResponse.fromProduct(existingProduct));
-        } catch (DataNotFoundException e) {
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    @GetMapping("/by-ids")
+    public ResponseEntity<?> getProductByIds(@RequestParam("ids") String ids){
+        try {
+            List<Long> productIds = Arrays.stream(ids.split(","))
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+            List<ProductResponse> productResponses = productService.findProductByIds(productIds);
+            return ResponseEntity.ok(productResponses);
+        }catch (Exception e){
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -160,7 +195,7 @@ public class ProductController {
                     .name(productName)
                     .price((float) faker.number().numberBetween(10,50_000_000))
                     .description(faker.lorem().sentence())
-                    .categoryId((long) faker.number().numberBetween(2,4))
+                    .categoryId((long) faker.number().numberBetween(2,8))
                     .build();
 
             try {

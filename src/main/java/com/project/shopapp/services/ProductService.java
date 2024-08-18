@@ -15,9 +15,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ public class ProductService implements IProductService {
     private final CategoryRepository categoryRepository;
     private final ProductImageRepository productImageRepository;
     @Override
+    @Transactional
     public Product createProduct(ProductDTO productDTO) throws DataNotFoundException {
         Category category = categoryRepository.findById(productDTO.getCategoryId())
                 .orElseThrow(()->new DataNotFoundException("Category is not exist"));
@@ -40,18 +44,21 @@ public class ProductService implements IProductService {
     }
 
     @Override
-    public Page<ProductResponse> getAllProducts(PageRequest request) {
-        return productRepository.findAll(request).map(ProductResponse::fromProduct);
+    public Page<ProductResponse> getAllProducts(String keyword,Long categoryId,PageRequest request) {
+        return productRepository.searchProducts(categoryId,keyword,request).map(ProductResponse::fromProduct);
     }
 
     @Override
     public Product getProductById(long id) throws DataNotFoundException {
-        return productRepository.findById(id).orElseThrow(
-                ()-> new DataNotFoundException("cannot find product id")
-                );
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new DataNotFoundException("Product not found"));
+        Set<ProductImage> images = productRepository.findImagesByProductId(id);
+        product.setProductImages(images);
+        return product;
     }
 
     @Override
+    @Transactional
     public Product updateProduct(long id, ProductDTO productDTO) throws DataNotFoundException {
         Product existProduct = getProductById(id);
        if(existProduct!=null){
@@ -68,6 +75,7 @@ public class ProductService implements IProductService {
     }
 
     @Override
+    @Transactional
     public void deleteProduct(long id) {
         Optional<Product> optional = productRepository.findById(id);
         if(optional.isPresent()){
@@ -80,6 +88,7 @@ public class ProductService implements IProductService {
         return productRepository.existsByName(name);
     }
     @Override
+    @Transactional
     public ProductImage createProductImage(Long id,ProductImageDTO productImageDTO) throws Exception {
         Product existProduct = productRepository.findById(id).orElseThrow(
                 ()->new DataNotFoundException("Product is not exist : "+productImageDTO.getProduct())
@@ -95,5 +104,23 @@ public class ProductService implements IProductService {
           throw new InvalidParamException("Number of images must be <5");
       }
       return productImageRepository.save(productImage);
+    }
+
+    @Override
+    public List<ProductResponse> findProductByIds(List<Long> ids) {
+        List<Product> products = productRepository.findProductByIds(ids);
+        List<ProductResponse> productResponses = new ArrayList<>();
+        for(Product p : products){
+            ProductResponse productResponse = ProductResponse
+                    .builder()
+                    .name(p.getName())
+                    .price(p.getPrice())
+                    .description(p.getDescription())
+                    .url(p.getUrl())
+                    .categoryId(p.getCategory().getId())
+                    .build();
+            productResponses.add(productResponse);
+        }
+        return productResponses;
     }
 }

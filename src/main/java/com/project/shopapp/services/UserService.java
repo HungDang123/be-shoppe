@@ -15,6 +15,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -27,6 +28,7 @@ public class UserService implements IUserService {
     private final JwtTokenUtils jwtTokenUtils;
     private final AuthenticationManager authenticationManager;
     @Override
+    @Transactional
     public User createUser(UserDTO userDTO) throws Exception{
         String phoneNumber = userDTO.getPhoneNumber();
         if(userRepository.existsByPhoneNumber(phoneNumber)){
@@ -58,7 +60,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public String login(String phoneNumber, String password) throws Exception {
+    public String login(String phoneNumber, String password,Long roleId) throws Exception {
         Optional<User> optionalUser = userRepository.findByPhoneNumber(phoneNumber);
         if(optionalUser.isEmpty()){
             throw new DataNotFoundException("Invalid phoneNumber / password");
@@ -68,6 +70,10 @@ public class UserService implements IUserService {
             if(!passwordEncoder.matches(password,user.getPassword())){
                 throw new BadCredentialsException("Wrong phone number or password");
             }
+        }
+        Role role = roleRepository.findById(roleId).get();
+        if(!roleId.equals(user.getRole().getId())){
+            throw new DataNotFoundException("Role is not exist");
         }
         UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
                 phoneNumber,password,user.getAuthorities()

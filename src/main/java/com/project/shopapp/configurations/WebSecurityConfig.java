@@ -6,11 +6,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.CorsConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -30,18 +37,13 @@ public class WebSecurityConfig {
                         // Allow all for registration and login
                         .requestMatchers(
                                 String.format("%s/users/register", apiPrefix),
-                                String.format("%s/users/login", apiPrefix)
+                                String.format("%s/users/login", apiPrefix),
+                                String.format("%s/roles", apiPrefix),
+                                String.format("%s/products/**", apiPrefix),
+                                String.format("%s/categories", apiPrefix)
                         ).permitAll()
 
-                        // GET requests for categories
-                        .requestMatchers(HttpMethod.GET, String.format("%s/categories?**", apiPrefix))
-                        .hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
-
-                        // GET requests for products
-                        .requestMatchers(HttpMethod.GET, String.format("%s/products?**", apiPrefix))
-                        .hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
-
-                        // POST, PUT, DELETE requests for categories
+                         // POST, PUT, DELETE requests for categories
                         .requestMatchers(HttpMethod.POST, String.format("%s/categories/**", apiPrefix))
                         .hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, String.format("%s/categories/**", apiPrefix))
@@ -63,7 +65,7 @@ public class WebSecurityConfig {
 
                         // GET requests for orders
                         .requestMatchers(HttpMethod.GET, String.format("%s/orders/**", apiPrefix))
-                        .hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+                        .permitAll()
 
                         // PUT and DELETE requests for orders
                         .requestMatchers(HttpMethod.PUT, String.format("%s/orders/**", apiPrefix))
@@ -74,7 +76,20 @@ public class WebSecurityConfig {
                         // All other requests
                         .anyRequest().authenticated()
                 );
+        http.cors(new Customizer<CorsConfigurer<HttpSecurity>>() {
+            @Override
+            public void customize(CorsConfigurer<HttpSecurity> httpSecurityCorsConfigurer) {
+                CorsConfiguration corsConfiguration = new CorsConfiguration();
+                corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173"));
+                corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+                corsConfiguration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+                corsConfiguration.setAllowCredentials(true);
 
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**",corsConfiguration);
+                httpSecurityCorsConfigurer.configurationSource(source);
+            }
+        });
         return http.build();
     }
 }
