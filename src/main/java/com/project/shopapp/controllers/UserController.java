@@ -1,6 +1,8 @@
 package com.project.shopapp.controllers;
 
+import com.project.shopapp.models.User;
 import com.project.shopapp.responses.ResponseObject;
+import com.project.shopapp.responses.UserResponse;
 import com.project.shopapp.services.IUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -66,6 +68,31 @@ public class UserController {
             return ResponseEntity.ok(new ResponseObject("OK","Login is successfully",token));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    @PostMapping("/detail")
+    public ResponseEntity<?> getDetailUser(@RequestHeader("Authorization") String token){
+        try {
+            String extractToken = token.substring(7); // loaij bor Bearer ....
+            User user = iUserService.getUserDetailFromToken(extractToken);
+            return ResponseEntity.ok(UserResponse.fromUser(user));
+        }catch (Exception e){
+            return ResponseEntity.badRequest().body(e.getMessage());        }
+    }
+    @PutMapping("/details/{id}")
+    public ResponseEntity<UserResponse> updateUser(@PathVariable("id") Long id,
+                                                   @RequestBody UserDTO userDTO,
+                                                   @RequestHeader("Authorization") String authorizationHeader){
+        try {
+            String extractToken = authorizationHeader.substring(7);
+            User user = iUserService.getUserDetailFromToken(extractToken);
+            if(user.getId() != id){
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            User updateUser = iUserService.updateUser(userDTO,id);
+            return ResponseEntity.ok(UserResponse.fromUser(updateUser));
+        }catch (Exception e){
+            return ResponseEntity.badRequest().build();
         }
     }
 }
