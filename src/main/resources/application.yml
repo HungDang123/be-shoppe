@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/shopapp
+    url: jdbc:postgresql://postgres:HyalvdnFRSNpSrWsRNMeYEtnNIMYVizc@autorack.proxy.rlwy.net:58167/railway
     username: postgres
-    password: 123
+    password: HyalvdnFRSNpSrWsRNMeYEtnNIMYVizc
     driver-class-name: org.postgresql.Driver
 
   jpa:
