@@ -3,14 +3,14 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://postgres:HyalvdnFRSNpSrWsRNMeYEtnNIMYVizc@autorack.proxy.rlwy.net:58167/railway
+    url: jdbc:postgresql://autorack.proxy.rlwy.net:58167/railway
     username: postgres
     password: HyalvdnFRSNpSrWsRNMeYEtnNIMYVizc
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
